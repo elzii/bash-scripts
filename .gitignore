@@ -5,4 +5,9 @@ _svn
 *.kpf
 *.swp
 .buildpath
-.sass-cache
+.sass-cach
+
+collections/
+experimental/
+installers/
+tests/
