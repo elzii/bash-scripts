@@ -1,0 +1,113 @@
+# if no parameter is passed, run the installer
+if [ -z "$1" ]
+  then
+    # read inputs
+    echo -ne ""
+    echo -ne  "Download latest version of $C_AQUA Wordpress?$C_DEFAULT > "; read GET_WP
+    echo -ne  "Get latest version of $C_RED Fifty Framework?$C_DEFAULT > "; read GET_FFW
+    echo -ne ""
+
+    #
+    # fpm_get_ffw()
+    # get latest version of fifty-framework from github, clone it into theme directory
+    #
+    fpm_get_wp() {
+      # YES
+      if [[ "$GET_WP" = 1 || "$GET_WP" = y || "$GET_WP" = yes ]] ; then
+
+        # make temp dir if it doesnt exist, get wp latest, extract it and delete temp folder
+        mkdir -p $TEMPDIR                                         && \
+        cd $TEMPDIR                                               && \
+        curl -sS http://wordpress.org/latest.zip > wp_latest.zip  && \
+        unzip wp_latest.zip                                       && \
+        rm wp_latest.zip                                          && \
+        
+        cd -                                                      && \
+        mv $TEMPDIR/wordpress ./                                  && \
+        mv wordpress/* ./                                         && \
+        rm -rf wordpress                                          && \
+
+        fpm_get_ffw
+       
+      # NO
+      elif [[ "$GET_WP" = 2  || "$GET_WP" = n || "$GET_WP" = no ]] ; then
+
+        fpm_get_ffw
+
+      else
+         echo -e "You must answer \033[32mYES (yes, y, 1)$C_DEFAULT or \033[31mNO (no, n, 2)$C_DEFAULT "
+      fi  
+    }
+
+
+    #
+    # fpm_get_ffw()
+    # get latest version of fifty-framework from github, clone it into theme directory
+    #
+    fpm_get_ffw() {
+      echo "cloning latest $C_RED Fifty Framework $C_DEFAULT into $WP_THEMEDIR"
+
+      # YES
+      if [[ "$GET_FFW" = 1 || "$GET_FFW" = y || "$GET_FFW" = yes ]] ; then
+
+        if [ -d "$WP_THEMEDIR" ]; then
+          # theme dir doesnt exists, get wp first or something went wrong
+          cd $WP_THEMEDIR
+        fi
+
+        git clone https://github.com/fiftyandfifty/fifty-framework    && \
+        ls
+
+       
+      # NO
+      elif [[ "$GET_FFW" = 2  || "$GET_FFW" = n || "$GET_FFW" = no ]] ; then
+
+        echo "Backing out."
+
+      else
+         echo -e "You must answer \033[32mYES (yes, y, 1)$C_DEFAULT or \033[31mNO (no, n, 2)$C_DEFAULT "
+      fi  
+
+    }
+
+    # run first function in chain
+    fpm_get_wp
+
+
+    # dir read
+    while read dir 
+    do
+      [ -d "$dir" ] || die "Directory $dir does not exist"
+      rm -rf "$dir"
+    done 
+
+# a parameter was passed
+else
+  # dependency check param passed
+  if [[ "$1" = "-d" ]]; then
+    echo -e "Running depedency check..."
+
+    # init missing dependecies array
+    MISSING_DEP=()
+
+    # check deps
+    if [[ -d "$HOMEDIR/.rvm" ]]; then echo -e ".rvm installed"; else MISSING_DEP+=('rvm'); fi
+
+    if [[ -f "/usr/local/bin/brew" ]]; then echo -e "brew installed"; else MISSING_DEP+=('brew'); fi
+
+    if [[ -f "/usr/local/bin/git" ]]; then echo -e "git installed"; else MISSING_DEP+=('git'); fi
+
+    # check if missing dep array is null
+    if [ ${#MISSING_DEP[@]} = 0 ]; then
+        echo "All dependencies installed!"
+    else
+        echo "You are missing the following dependencies: $MISSING_DEP"
+    fi
+     
+
+  # invalid param passed
+  else
+    echo "invalid parameter. parameters are: -d (dependency check) or pass no parameter to run the installer"
+    exit
+  fi
+fi
