@@ -5,6 +5,8 @@ HOMEDIR="/Users/`whoami`"
 TEMPDIR="/Users/`whoami`/temp/fpm_temp"
 WP_THEMEDIR="wp-content/themes/"
 USERNAME="`whoami`"
+USR_BIN="/usr/local/bin"
+JSON_SETTINGS_URL="https://gist.github.com/elzii/7037718/raw/340b27978d0aa6a3f30bffc0a6530bbcb156b6bb/ffw_settings.json"
 
 # colors
 C_DEFAULT="\033[0m"
@@ -16,10 +18,11 @@ C_PINK="\033[35m"
 C_AQUA="\033[36m"
 C_WHITE="\033[37m"
 
+
 # if no parameter is passed, run the installer
-  echo -e ""
+  echo -e  ""
   echo -ne "$C_ORANGE Running depedency check... $C_DEFAULT \n"
-  echo -e " ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾"
+  echo -e  " ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾"
 
     # init missing dependecies array
     MISSING_DEP=()
@@ -27,6 +30,12 @@ C_WHITE="\033[37m"
     # check deps
     # -------------------------------------------------------------------------------
 
+    # jq (json parsing for bash script)
+    if [[ -f "/usr/local/bin/jsawk" ]]; then 
+      echo -ne "$C_BLUE jsawk$C_DEFAULT installed $C_ORANGE>>> $C_WHITE"
+      which jsawk 
+      echo -ne "$C_DEFAULT"
+    else MISSING_DEP+=('jsawk'); fi
     # wget
     if [[ -f "/usr/local/bin/wget" ]]; then 
       echo -ne "$C_BLUE wget $C_DEFAULT installed $C_ORANGE>>> $C_WHITE"
@@ -78,13 +87,21 @@ C_WHITE="\033[37m"
 
     # check if missing dep array is null
     if [ ${#MISSING_DEP[@]} = 0 ]; then
-        echo -e " ___________________________"
+        echo -ne " ________________________________________________________________________________\n"
         echo -ne "$C_GREEN All dependencies installed! $C_DEFAULT \n"
         echo -e ""
     # handle missing dependencies
     else
-        echo -ne "$C_RED $MISSING_DEP $C_DEFAULT not installed \n"
-        echo -e " ___________________________"
+        echo -e  ""
+        echo -ne "$C_RED Some dependencies are not installed... $C_DEFAULT\n"
+        echo -e " ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾"
+        echo -ne " INSTALLING MISSING DEPENENCIES$C_ORANGE >>>$C_BLUE $MISSING_DEP $C_DEFAULT \n"
+
+        # if brew
+        if [[ $MISSING_DEP == jsawk ]]; then
+          # go to usr bin and install
+          brew install jsawk
+        fi
 
         # if RVM
         if [[ $MISSING_DEP == rvm ]]; then
@@ -96,18 +113,21 @@ C_WHITE="\033[37m"
         # if brew
         if [[ $MISSING_DEP == brew ]]; then
           echo -e " Would you like to install $C_RED $MISSING_DEP$C_DEFAULT ?"; read INSALL_BREW
-          elif [[ "$INSTALL BREW" = 1 || "$INSTALL BREW" = y || "$INSTALL BREW" = yes ]]; then
+          elif [[ "$INSTALL_BREW" = 1 || "$INSTALL_BREW" = y || "$INSTALL_BREW" = yes ]]; then
             ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
         fi
         
     fi
 
-  # read inputs
-  echo -ne ""
-  echo -ne  "Download latest version of$C_AQUA Wordpress $C_DEFAULT   > "; read GET_WP
-  echo -ne  "Get latest version of $C_RED Fifty Framework $C_DEFAULT > "; read GET_FFW
-  echo -ne  "After preparing project, run$C_GREEN GIT INIT $C_DEFAULT  > "; read GET_FFW
-  echo -ne ""
+  read_inputs() {
+    echo -ne ""
+    echo -ne  "Download latest version of$C_AQUA Wordpress $C_DEFAULT   > "; read GET_WP
+    echo -ne  "Get latest version of $C_RED Fifty Framework $C_DEFAULT > "; read GET_FFW
+    # echo -ne  "After preparing project, run$C_GREEN GIT INIT $C_DEFAULT  > "; read GET_FFW
+    echo -ne ""
+
+    fpm_get_wp
+  }
 
   #
   # fpm_get_ffw()
@@ -184,12 +204,37 @@ C_WHITE="\033[37m"
   # fpm_git_init
   # init git repository
   # 
-  
+
+  #
+  # get_json_settings
+  #
+  get_json_settings(){
+
+    # vars
+    JSON_FILE="settings.json"
+
+    # commands
+    echo -ne "$C_ORANGE Fetching $JSON_FILE $C_DEFAULT \n"
+    echo -e " ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾"
+    mkdir -p $TEMPDIR                         && \
+    cd $TEMPDIR                               && \
+    curl $JSON_SETTINGS_URL > $JSON_FILE      && \
+    echo -e " ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\n"
+    
+    # parse & get settings
+    echo -ne "$C_WHITE returning this.javascripts $C_DEFAULT \n"
+    cat $JSON_FILE | jsawk 'return this.javascripts'
+
+    exit
+  }
 
 
-
-  # run first function in chain
-  fpm_get_wp
+  # @INIT
+  # ---------------------------
+  # read inputs
+  # ---------------------------
+  read_inputs
+  # get_json_settings
 
 
   # dir read
