@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# how to install
+# $ cd /usr/local/bin && curl -sS https://raw.github.com/elzii/bash-scripts/master/sources/fpm.sh > fpm.sh && chmod +x /usr/local/bin/fpm.sh && cd - 
+
 # vars
 HOMEDIR="/Users/`whoami`"
 TEMPDIR="/Users/`whoami`/temp/fpm_temp"
